@@ -1,0 +1,9 @@
+services:
+  orchestrator:
+    build: .
+    ports:
+      - "80:80"
+    volumes:
+      # status.json is written by deploy.py; mounted as a directory so it can be replaced atomically
+      - ./data:/app/data
+    restart: unless-stopped

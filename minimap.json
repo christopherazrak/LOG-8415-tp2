@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "sections": [
+    { "id": "pipeline", "label": "Run All", "description": "End-to-end entry point: provision, deploy, test", "paths": ["infra/run_all.py"] },
+    { "id": "aws", "label": "AWS Infra", "description": "Create, list and tear down the 3 EC2 instances, SGs and key", "paths": ["infra/provision.py", "infra/instances.py", "infra/teardown.py"] },
+    { "id": "config", "label": "Config", "description": "Region, instance type, ports and resource names", "paths": ["infra/config.py"] },
+    { "id": "deploy", "label": "Deploy", "description": "Installs Docker over SSH, copies apps, writes status.json", "paths": ["infra/deploy.py"] },
+    { "id": "test-client", "label": "Demo Requests", "description": "Sends concurrent requests to the live orchestrator, saves responses", "paths": ["infra/send_requests.py"] },
+    { "id": "orchestrator", "label": "Orchestrator", "description": "Flask on :80, routes to free workers and queues the rest", "paths": ["orchestrator/**"] },
+    { "id": "worker", "label": "Worker", "description": "Dockerized Flask on :5000 running DistilBERT sentiment", "paths": ["worker/**"] },
+    { "id": "project", "label": "Project", "description": "README, dependencies and assignment PDF", "paths": ["README.md", "pyproject.toml", "uv.lock", "*.pdf"] }
+  ],
+  "edges": [
+    ["pipeline", "aws"],
+    ["pipeline", "deploy"],
+    ["pipeline", "test-client"],
+    ["aws", "config"],
+    ["deploy", "aws"],
+    ["deploy", "config"],
+    ["deploy", "orchestrator"],
+    ["deploy", "worker"],
+    ["test-client", "aws"],
+    ["test-client", "orchestrator"],
+    ["orchestrator", "worker"]
+  ]
+}

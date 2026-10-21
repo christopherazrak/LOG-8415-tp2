@@ -1,0 +1,14 @@
+[project]
+name = "log8415-tp2"
+version = "0.1.0"
+description = "Dockerized Flask workers behind a queueing orchestrator on AWS EC2"
+requires-python = ">=3.12"
+dependencies = [
+    "boto3>=1.43.100",
+    "requests>=2.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "flask>=3.1.3",
+]
