@@ -4,6 +4,5 @@ services:
     ports:
       - "5000:5000"
     environment:
-      # Set per instance by deploy.py in the .env file next to this one
       - WORKER_NAME=${WORKER_NAME:-worker}
     restart: unless-stopped
