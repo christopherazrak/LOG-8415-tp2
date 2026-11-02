@@ -1,5 +1,3 @@
-"""Install Docker on every instance, copy the app code over SSH and start the containers."""
-
 import json
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -11,8 +9,6 @@ from instances import get_project_instances
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SSH_OPTIONS = ["-i", str(KEY_PATH), "-o", "StrictHostKeyChecking=no", "-o", "LogLevel=ERROR"]
 
-# Official Docker docs, "Install using the apt repository" for Ubuntu.
-# cloud-init runs apt on first boot, so wait for it to release the apt lock first.
 INSTALL_DOCKER = """set -e
 cloud-init status --wait > /dev/null
 if ! command -v docker > /dev/null; then
@@ -42,7 +38,6 @@ def copy_app(host, app_dir):
 
 
 def start_containers(host, health_url):
-    # The worker loads the model on startup, so poll its health endpoint before returning
     ssh(
         host,
         f"""set -e
@@ -55,8 +50,6 @@ echo "Container did not become healthy" >&2; sudo docker compose logs --tail 50;
 
 
 def build_status(workers):
-    # Private IPs: the worker security group only accepts port 5000 from the orchestrator's SG,
-    # which only matches traffic inside the VPC.
     return {
         name: {"ip": worker["private_ip"], "port": str(WORKER_PORT), "status": "free"}
         for name, worker in workers.items()
@@ -86,17 +79,16 @@ def deploy_orchestrator(orchestrator, status):
 def deploy_apps():
     instances = get_project_instances()
     orchestrator = next(i for i in instances if i["role"] == "orchestrator")
-    # Sorted so worker1/worker2 names are stable between runs
+    
     worker_list = sorted((i for i in instances if i["role"] == "worker"), key=lambda i: i["instance_id"])
     workers = {f"worker{n}": worker for n, worker in enumerate(worker_list, start=1)}
     status = build_status(workers)
 
-    # The orchestrator doesn't need the workers to be up to start, so deploy all three at once
     with ThreadPoolExecutor(max_workers=len(instances)) as executor:
         futures = [executor.submit(deploy_worker, name, worker) for name, worker in workers.items()]
         futures.append(executor.submit(deploy_orchestrator, orchestrator, status))
         for future in futures:
-            future.result()  # re-raises a failed deployment
+            future.result()
 
     url = f"http://{orchestrator['public_ip']}:{ORCHESTRATOR_PORT}"
     print("Orchestrator:", url)
